@@ -1,0 +1,13 @@
+[package]
+name = "CLI"
+version = "0.1.0"
+authors = ["Calen Cuesta <cuesta22@students.rowan.edu>"]
+license = "MIT OR Apache-2.0"
+description = "A very basic CLI utility tool."
+readme = "README.md"
+edition = "2021"
+keywords = ["cli"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+structopt = "0.3.26"
