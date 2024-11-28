@@ -1,5 +1,5 @@
 [package]
-name = "CLI"
+name = "Calen-sCLI"
 version = "0.1.0"
 authors = ["Calen Cuesta <cuesta22@students.rowan.edu>"]
 license = "MIT OR Apache-2.0"
