@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::{self, BufRead};
-// use std::path::Path;
+use std::path::Path;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -45,24 +45,74 @@ fn main() {
             println!("{}", text);
         }
         CLI::Cat { file } => {
-            match fs::read_to_string(&file) {
-                Ok(content) => println!("{}", content),
-                Err(err) => eprintln!("Error reading file: {}", err),
-            }
+			let path = Path::new(&file);
+			
+			if !path.exists(){
+				eprintln!("Error: File '{}' does not exist.", file);
+				return;
+			}
+			
+            let file = match fs::File::open(file.clone()) {
+				Ok(f) => f,
+				Err(err) => {
+					eprintln!("Error: Unable to open file '{}': {}", file, err);
+					return;
+				}
+			};
+			let reader = io::BufReader::new(file);
+
+			for line in reader.lines() {
+				match line {
+					Ok(content) => println!("{}", content),
+					Err(err) => eprintln!("Error reading line: {}", err),
+				}
+			}
         }
         CLI::Ls { path } => {
-            match fs::read_dir(&path) {
-                Ok(entries) => {
-                    for entry in entries {
-                        match entry {
-                            Ok(e) => println!("{}", e.file_name().to_string_lossy()),
-                            Err(err) => eprintln!("Error reading entry: {}", err),
-                        }
-                    }
-                }
-                Err(err) => eprintln!("Error reading directory: {}", err),
-            }
-        }
+			let entries = match fs::read_dir(path.clone()) {
+			Ok(entries) => entries,
+			Err(err) => {
+				eprintln!("Error: Unable to read directory '{}': {}", path, err);
+				return;
+				}
+			};
+
+			for entry in entries {
+				match entry {
+					Ok(e) => {
+						let metadata = match e.metadata() {
+							Ok(m) => m,
+							Err(err) => {
+								eprintln!(
+									"Error: Unable to get metadata for '{}': {}",
+									e.path().display(),
+									err
+								);
+								continue;
+							}
+						};
+               
+						let file_type = if metadata.is_dir() {
+							"Directory"
+						} else if metadata.is_file() {
+							"File"
+						} else {
+							"Other"
+						};
+
+						let size = metadata.len();
+						let filename_temp = e.file_name();
+						let filename = filename_temp.to_string_lossy();
+
+						println!(
+							"{:<10} {:<20} {}",
+							file_type, size, filename
+						);
+					}
+					Err(err) => eprintln!("Error reading entry: {}", err),
+				}
+			}
+		}
         CLI::Find { path, filename } => {
             let mut found = false;
             if let Err(err) = find_files(&path, &filename, &mut found) {
